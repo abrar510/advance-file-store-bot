@@ -68,7 +68,6 @@ active_batches = {}
 
 async def check_join(user_id):
 
-```
 try:
     member = await app.get_chat_member(
         FORCE_CHANNEL,
@@ -85,7 +84,6 @@ except UserNotParticipant:
 
 except Exception:
     return False
-```
 
 # =========================
 
@@ -95,7 +93,6 @@ except Exception:
 
 async def auto_delete(chat_id, message_ids):
 
-```
 await asyncio.sleep(600)
 
 try:
@@ -105,7 +102,6 @@ try:
     )
 except Exception as e:
     print("Delete Error:", e)
-```
 
 # =========================
 
@@ -115,7 +111,6 @@ except Exception as e:
 
 async def send_batch(message, batch_id):
 
-```
 data = await batches.find_one(
     {"batch_id": batch_id}
 )
@@ -159,7 +154,6 @@ asyncio.create_task(
         sent_messages
     )
 )
-```
 
 # =========================
 
@@ -170,7 +164,6 @@ asyncio.create_task(
 @app.on_message(filters.command("start"))
 async def start(_, message):
 
-```
 if len(message.command) == 1:
     return await message.reply(
         "🤖 Bot Is Alive!"
@@ -212,7 +205,6 @@ await send_batch(
     message,
     batch_id
 )
-```
 
 # =========================
 
@@ -225,7 +217,6 @@ filters.regex("^check_")
 )
 async def try_again(_, query):
 
-```
 batch_id = query.data.split(
     "_",
     1
@@ -252,7 +243,6 @@ await send_batch(
 await query.answer(
     "✅ Access Granted"
 )
-```
 
 # =========================
 
@@ -266,7 +256,6 @@ filters.command("batch")
 )
 async def batch(_, message):
 
-```
 active_batches[
     message.from_user.id
 ] = []
@@ -274,7 +263,6 @@ active_batches[
 await message.reply(
     "📥 Send Files Now..."
 )
-```
 
 # =========================
 
@@ -293,7 +281,6 @@ filters.document
 )
 async def collect(_, message):
 
-```
 uid = message.from_user.id
 
 if uid not in active_batches:
@@ -306,7 +293,6 @@ active_batches[uid].append(
 await message.reply(
     "✅ File Added"
 )
-```
 
 # =========================
 
@@ -320,7 +306,6 @@ filters.command("done")
 )
 async def done(_, message):
 
-```
 uid = message.from_user.id
 
 if uid not in active_batches:
@@ -384,7 +369,6 @@ await message.reply(
     f"✅ Batch Created Successfully!\n\n"
     f"🔗 {link}"
 )
-```
 
 # =========================
 
