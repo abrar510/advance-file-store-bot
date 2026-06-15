@@ -1,3 +1,5 @@
+# bot.py
+
 import os
 import asyncio
 import secrets
@@ -26,6 +28,13 @@ STORE_CHANNEL = int(os.getenv("STORE_CHANNEL"))
 FORCE_CHANNEL = int(os.getenv("FORCE_CHANNEL"))
 
 MONGO_URI = os.getenv("MONGO_URI")
+
+CHANNEL_LINK = os.getenv(
+"CHANNEL_LINK",
+"https://t.me/your_channel"
+)
+
+AUTO_DELETE_TIME = 600  # 10 minutes
 
 # =========================
 
@@ -68,13 +77,17 @@ active_batches = {}
 
 async def check_join(user_id):
 
+```
 try:
     member = await app.get_chat_member(
         FORCE_CHANNEL,
         user_id
     )
 
-    if member.status in ["left", "kicked"]:
+    if member.status in [
+        "left",
+        "kicked"
+    ]:
         return False
 
     return True
@@ -84,6 +97,7 @@ except UserNotParticipant:
 
 except Exception:
     return False
+```
 
 # =========================
 
@@ -91,17 +105,28 @@ except Exception:
 
 # =========================
 
-async def auto_delete(chat_id, message_ids):
+async def auto_delete(
+chat_id,
+message_ids
+):
 
-await asyncio.sleep(600)
+```
+await asyncio.sleep(
+    AUTO_DELETE_TIME
+)
 
 try:
     await app.delete_messages(
         chat_id,
         message_ids
     )
+
 except Exception as e:
-    print("Delete Error:", e)
+    print(
+        "Delete Error:",
+        e
+    )
+```
 
 # =========================
 
@@ -109,15 +134,22 @@ except Exception as e:
 
 # =========================
 
-async def send_batch(message, batch_id):
+async def send_batch(
+message,
+batch_id
+):
 
+```
 data = await batches.find_one(
-    {"batch_id": batch_id}
+    {
+        "batch_id": batch_id
+    }
 )
 
 if not data:
+
     return await message.reply(
-        "❌ Invalid or Expired Link."
+        "❌ Invalid or expired link."
     )
 
 sent_messages = []
@@ -132,12 +164,19 @@ for msg_id in data["files"]:
             message_id=msg_id
         )
 
-        sent_messages.append(sent.id)
+        sent_messages.append(
+            sent.id
+        )
 
     except Exception as e:
-        print("Copy Error:", e)
+
+        print(
+            "Copy Error:",
+            e
+        )
 
 if not sent_messages:
+
     return await message.reply(
         "❌ Failed to send files."
     )
@@ -154,6 +193,7 @@ asyncio.create_task(
         sent_messages
     )
 )
+```
 
 # =========================
 
@@ -161,10 +201,17 @@ asyncio.create_task(
 
 # =========================
 
-@app.on_message(filters.command("start"))
-async def start(_, message):
+@app.on_message(
+filters.command("start")
+)
+async def start(
+client,
+message
+):
 
+```
 if len(message.command) == 1:
+
     return await message.reply(
         "🤖 Bot Is Alive!"
     )
@@ -177,18 +224,14 @@ joined = await check_join(
 
 if not joined:
 
-    invite_link = await app.export_chat_invite_link(
-        FORCE_CHANNEL
-    )
-
     return await message.reply(
-        "⚠️ You Have To Join Our Channel First!",
+        "⚠️ You have to join our channel first.",
         reply_markup=InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
                         "📢 Join Channel",
-                        url=invite_link
+                        url=CHANNEL_LINK
                     )
                 ],
                 [
@@ -205,6 +248,7 @@ await send_batch(
     message,
     batch_id
 )
+```
 
 # =========================
 
@@ -215,8 +259,12 @@ await send_batch(
 @app.on_callback_query(
 filters.regex("^check_")
 )
-async def try_again(_, query):
+async def try_again(
+client,
+query
+):
 
+```
 batch_id = query.data.split(
     "_",
     1
@@ -229,7 +277,7 @@ joined = await check_join(
 if not joined:
 
     return await query.answer(
-        "❌ Join Channel First!",
+        "❌ Please join channel first.",
         show_alert=True
     )
 
@@ -243,10 +291,11 @@ await send_batch(
 await query.answer(
     "✅ Access Granted"
 )
+```
 
 # =========================
 
-# BATCH START
+# CREATE BATCH
 
 # =========================
 
@@ -254,15 +303,20 @@ await query.answer(
 filters.command("batch")
 & filters.user(OWNER_ID)
 )
-async def batch(_, message):
+async def batch(
+client,
+message
+):
 
+```
 active_batches[
     message.from_user.id
 ] = []
 
 await message.reply(
-    "📥 Send Files Now..."
+    "📥 Send your files now..."
 )
+```
 
 # =========================
 
@@ -279,8 +333,12 @@ filters.document
 | filters.photo
 )
 )
-async def collect(_, message):
+async def collect(
+client,
+message
+):
 
+```
 uid = message.from_user.id
 
 if uid not in active_batches:
@@ -293,6 +351,7 @@ active_batches[uid].append(
 await message.reply(
     "✅ File Added"
 )
+```
 
 # =========================
 
@@ -304,11 +363,16 @@ await message.reply(
 filters.command("done")
 & filters.user(OWNER_ID)
 )
-async def done(_, message):
+async def done(
+client,
+message
+):
 
+```
 uid = message.from_user.id
 
 if uid not in active_batches:
+
     return await message.reply(
         "❌ No Active Batch."
     )
@@ -316,6 +380,7 @@ if uid not in active_batches:
 files = active_batches[uid]
 
 if not files:
+
     return await message.reply(
         "❌ No Files Found."
     )
@@ -330,23 +395,30 @@ for file in files:
 
     try:
 
-        sent = await file.copy(
+        stored = await file.copy(
             STORE_CHANNEL
         )
 
         msg_ids.append(
-            sent.id
+            stored.id
         )
 
     except Exception as e:
-        print("Store Error:", e)
+
+        print(
+            "Store Error:",
+            e
+        )
 
 if not msg_ids:
+
     return await message.reply(
         "❌ Upload Failed."
     )
 
-batch_id = secrets.token_urlsafe(8)
+batch_id = secrets.token_urlsafe(
+    8
+)
 
 await batches.insert_one(
     {
@@ -366,14 +438,17 @@ link = (
 )
 
 await message.reply(
-    f"✅ Batch Created Successfully!\n\n"
+    "✅ Batch Created Successfully!\n\n"
     f"🔗 {link}"
 )
+```
 
 # =========================
 
 # RUN
 
 # =========================
+
+print("Bot Started...")
 
 app.run()
