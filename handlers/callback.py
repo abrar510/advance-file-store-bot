@@ -11,9 +11,7 @@ from pyrogram.types import (
     InlineKeyboardButton
 )
 
-from handlers.start import (
-    send_batch_files
-)
+from handlers.batch import send_batch_files
 
 
 @app.on_callback_query(
