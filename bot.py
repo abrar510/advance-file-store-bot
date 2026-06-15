@@ -36,18 +36,18 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-# active batch memory
+# Active memory
 active_batches = {}
 
 # ======================
-# /start
+# START
 # ======================
 
 @app.on_message(filters.command("start"))
 async def start(_, message):
 
     if len(message.command) == 1:
-        return await message.reply("Bot is alive ✅")
+        return await message.reply("🤖 Bot is alive!")
 
     batch_id = message.command[1]
 
@@ -59,14 +59,18 @@ async def start(_, message):
     sent_msgs = []
 
     for msg_id in data["files"]:
+        try:
+            msg = await app.copy_message(
+                chat_id=message.chat.id,
+                from_chat_id=STORE_CHANNEL,
+                message_id=msg_id
+            )
+            sent_msgs.append(msg.id)
+        except Exception as e:
+            print("Send error:", e)
 
-        msg = await app.copy_message(
-            chat_id=message.chat.id,
-            from_chat_id=STORE_CHANNEL,
-            message_id=msg_id
-        )
-
-        sent_msgs.append(msg.id)
+    if not sent_msgs:
+        return await message.reply("❌ Failed to send files")
 
     await message.reply("📂 Files sent!\n⏳ Auto delete in 10 minutes")
 
@@ -74,7 +78,7 @@ async def start(_, message):
 
 
 # ======================
-# /batch
+# BATCH START
 # ======================
 
 @app.on_message(filters.command("batch") & filters.user(OWNER_ID))
@@ -86,7 +90,7 @@ async def batch(_, message):
 
 
 # ======================
-# FILE COLLECT
+# COLLECT FILES
 # ======================
 
 @app.on_message(
@@ -106,7 +110,7 @@ async def collect(_, message):
 
 
 # ======================
-# /done
+# DONE + GENERATE LINK
 # ======================
 
 @app.on_message(filters.command("done") & filters.user(OWNER_ID))
@@ -122,12 +126,20 @@ async def done(_, message):
     if not files:
         return await message.reply("❌ No files found")
 
+    await message.reply("⏳ Creating batch...")
+
     msg_ids = []
 
     for file in files:
+        try:
+            sent = await file.copy(STORE_CHANNEL)
+            if sent:
+                msg_ids.append(sent.id)
+        except Exception as e:
+            print("Copy error:", e)
 
-        sent = await file.copy(STORE_CHANNEL)
-        msg_ids.append(sent.id)
+    if not msg_ids:
+        return await message.reply("❌ Upload failed to store channel")
 
     batch_id = secrets.token_urlsafe(8)
 
@@ -138,17 +150,20 @@ async def done(_, message):
 
     del active_batches[uid]
 
-    bot_username = (await app.get_me()).username
+    me = await app.get_me()
 
-    link = f"https://t.me/{bot_username}?start={batch_id}"
+    if not me.username:
+        return await message.reply("❌ Bot username not set in BotFather")
+
+    link = f"https://t.me/{me.username}?start={batch_id}"
 
     await message.reply(
-        f"✅ Batch Created!\n\n🔗 {link}"
+        f"✅ Batch Created Successfully!\n\n🔗 {link}"
     )
 
 
 # ======================
-# AUTO DELETE
+# AUTO DELETE SYSTEM
 # ======================
 
 async def auto_delete(chat_id, msg_ids):
@@ -158,12 +173,12 @@ async def auto_delete(chat_id, msg_ids):
     for mid in msg_ids:
         try:
             await app.delete_messages(chat_id, mid)
-        except:
-            pass
+        except Exception as e:
+            print("Delete error:", e)
 
 
 # ======================
-# START BOT
+# RUN BOT
 # ======================
 
 app.run()
