@@ -77,7 +77,6 @@ active_batches = {}
 
 async def check_join(user_id):
 
-```
 try:
     member = await app.get_chat_member(
         FORCE_CHANNEL,
@@ -97,7 +96,6 @@ except UserNotParticipant:
 
 except Exception:
     return False
-```
 
 # =========================
 
@@ -110,7 +108,6 @@ chat_id,
 message_ids
 ):
 
-```
 await asyncio.sleep(
     AUTO_DELETE_TIME
 )
@@ -126,7 +123,6 @@ except Exception as e:
         "Delete Error:",
         e
     )
-```
 
 # =========================
 
@@ -139,7 +135,6 @@ message,
 batch_id
 ):
 
-```
 data = await batches.find_one(
     {
         "batch_id": batch_id
@@ -193,7 +188,6 @@ asyncio.create_task(
         sent_messages
     )
 )
-```
 
 # =========================
 
@@ -209,7 +203,6 @@ client,
 message
 ):
 
-```
 if len(message.command) == 1:
 
     return await message.reply(
@@ -248,7 +241,6 @@ await send_batch(
     message,
     batch_id
 )
-```
 
 # =========================
 
@@ -264,7 +256,6 @@ client,
 query
 ):
 
-```
 batch_id = query.data.split(
     "_",
     1
@@ -291,7 +282,6 @@ await send_batch(
 await query.answer(
     "✅ Access Granted"
 )
-```
 
 # =========================
 
@@ -308,7 +298,6 @@ client,
 message
 ):
 
-```
 active_batches[
     message.from_user.id
 ] = []
@@ -316,7 +305,6 @@ active_batches[
 await message.reply(
     "📥 Send your files now..."
 )
-```
 
 # =========================
 
@@ -338,7 +326,6 @@ client,
 message
 ):
 
-```
 uid = message.from_user.id
 
 if uid not in active_batches:
@@ -351,7 +338,6 @@ active_batches[uid].append(
 await message.reply(
     "✅ File Added"
 )
-```
 
 # =========================
 
@@ -368,7 +354,6 @@ client,
 message
 ):
 
-```
 uid = message.from_user.id
 
 if uid not in active_batches:
@@ -441,7 +426,6 @@ await message.reply(
     "✅ Batch Created Successfully!\n\n"
     f"🔗 {link}"
 )
-```
 
 # =========================
 
