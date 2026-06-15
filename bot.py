@@ -72,7 +72,7 @@ async def start(_, message):
     if not sent_msgs:
         return await message.reply("❌ Failed to send files")
 
-    await message.reply("📂 Files sent!\n⏳ Auto delete in 10 minutes")
+    await message.reply("📂 Files sent!\n⏳ Auto delete in 10 minutes. Please forward it to Saved Messages.")
 
     asyncio.create_task(auto_delete(message.chat.id, sent_msgs))
 
