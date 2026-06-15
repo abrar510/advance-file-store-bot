@@ -29,6 +29,63 @@ async def batch_start(
         "Send all files now.\n\n"
         "When finished send /done"
     )
+# --------------------
+# SEND FILES
+# --------------------
+
+async def send_batch_files(
+    client,
+    chat_id,
+    batch_id
+):
+
+    batch = await batches.find_one(
+        {
+            "_id": batch_id
+        }
+    )
+
+    if not batch:
+
+        return await client.send_message(
+            chat_id,
+            "Batch not found."
+        )
+
+    sent_messages = []
+
+    for file in batch["files"]:
+
+        try:
+
+            msg = await client.send_cached_media(
+                chat_id,
+                file["file_id"]
+            )
+
+            sent_messages.append(
+                msg.id
+            )
+
+        except:
+            pass
+
+    note = await client.send_message(
+        chat_id,
+        "Your files will be deleted within 10 minutes so forward it to saved messages."
+    )
+
+    sent_messages.append(
+        note.id
+    )
+
+    asyncio.create_task(
+        auto_delete(
+            client,
+            chat_id,
+            sent_messages
+        )
+    )
 
 # ---------------------
 # COLLECT FILES
@@ -137,4 +194,57 @@ async def batch_done(
 
     await message.reply(
         f"Batch Created\n\n{link}"
+    )
+import asyncio
+
+from database import batches
+from utils.auto_delete import auto_delete
+
+
+async def send_batch_files(
+    client,
+    chat_id,
+    batch_id
+):
+
+    batch = await batches.find_one(
+        {"_id": batch_id}
+    )
+
+    if not batch:
+        return await client.send_message(
+            chat_id,
+            "Batch not found."
+        )
+
+    sent_messages = []
+
+    for file in batch["files"]:
+
+        try:
+            msg = await client.send_cached_media(
+                chat_id,
+                file["file_id"]
+            )
+
+            sent_messages.append(
+                msg.id
+            )
+
+        except Exception:
+            pass
+
+    note = await client.send_message(
+        chat_id,
+        "Your files will be deleted within 10 minutes so forward it to saved messages."
+    )
+
+    sent_messages.append(note.id)
+
+    asyncio.create_task(
+        auto_delete(
+            client,
+            chat_id,
+            sent_messages
+        )
     )
