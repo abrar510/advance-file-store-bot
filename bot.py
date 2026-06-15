@@ -15,7 +15,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID"))
 STORE_CHANNEL = int(os.getenv("STORE_CHANNEL"))
 
-MONGO_URL = os.getenv("MONGO_URL")
+MONGO_URL = os.getenv("MONGO_URI")
 
 # ======================
 # DATABASE
